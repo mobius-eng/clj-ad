@@ -1,47 +1,64 @@
-# clj-auto-diff
+# clj-ad
 
 This is a library for automatic differentiation in Clojure. It's based
-and initiall ported from [R6RS-AD](https://github.com/qobi/R6RS-AD).
+and initiall ported from [R6RS-AD](https://github.com/qobi/R6RS-AD)
+and [`clj-auto-diff`](https://github.com/log0ymxm/clj-auto-diff).
 
 ## Usage
 
-Include it in your project using clojars,
+At the moment library is not in Clojars (yet). So, you will need to
+fork the repository and do `lein install` in the repo directory. After
+this the project can be referenced using
 
-    [clj-auto-diff "0.1.3"]
+    [clj-ad "0.2.0"]
 
-An example where being able to compute a derivative lets us solve
-easily using Newton's method. Here we're solving for `x`, where `e^x -
-1.5 = tan^{-1}(x)`. We do this by finding the root of `e^x - 1.5 -
-tan^{-1}(x) = 0`.
+in dependencies. More info on using Leiningen with local repository
+can be found
+[here](http://www.spacjer.com/blog/2015/03/23/leiningen-working-with-local-repository/).
 
-```clojure
-(let [f (fn [x] (- (- (exp x) 1.5)
-                   (atan x)))
-      f' (diff f)
-      convergent? (fn [{:keys [steps error] :or {steps 0
-                                                error 1}}]
-                    (or (< error 0.00001)
-                        (> steps 20)))
-      next-guess (fn [{:keys [x last steps] :or {last 0
-                                                steps 0}}]
-                   (let [guess (- x (/ (f x)
-                                       (f' x)))]
-                     {:steps (inc steps)
-                      :error (- last guess)
-                      :last x
-                      :x guess}))]
-  (first (drop-while #(not (convergent? %))
-                     (iterate #(next-guess %)
-                              {:x -7})))
-  => {:error 1.8005508195528819E-9
-      :last -14.101269772739967
-      :steps 7
-      :x -14.101269772739967})
-```
+
+## What is "automatic (algorithmic) differentiation (AD)"?
+
+AD rerers to the method of calculating numerical derivatives
+analytically, but not symbolically. A general idea is to exploit the
+chain rule. For this the whole arithmetic of the language is replaced
+with slightly more generic arithmetic operations: instead of operating
+on numbers only, these operations can accept *dual numbers* or *tapes*
+and produce the derivative of the operation as well as the main
+result.
+
+In essence, *dual numbers* are the extension of numbers with
+*perturbations*, their "derivatives". Consider function `f(x)`. If we
+know it's derivative `df(x)`, then given a dual number `[z dz]`, the
+result of application of `f(x)` to it is a dual number
+`[f(z) df(z)*dz]`. This result can become an input to the next
+function `g(x)`, producing `[g(f(z)) dg(z)*df(z)*dz]`. And so on. To
+begin the process, all we need is to set `dz=1`. This is called
+forward derivative.
+
+TODO: reverse derivative.
+
+## Current state
+Forward derivatives are implemented in full. Reverse derivatives still
+need to be implemented.
+
+Next step: implement full Jacobian calculation.
+
+## Code examples
+
+### Single value functions
+TODO
+### Vector value functions
+TODO
+### Advanced use
+TODO
+
+
 
 ## License
 
 Copyright © 2014 Paul English
+Copyright © 2016 Alexey Cherkaev (mobius-eng)
 
 Distributed under the Eclipse Public License either version 1.0 or (at
 your option) any later version.

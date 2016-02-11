@@ -1,6 +1,6 @@
-(defproject clj-auto-diff "0.1.4"
-  :description "Automatic differentiation library (fork)"
-  :url "http://github.com/mobius-eng/clj-auto-diff"
+(defproject clj-ad "0.2.0"
+  :description "Clojure Automatic Differentiation"
+  :url "http://github.com/mobius-eng/clj-ad"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[net.mikera/core.matrix "0.49.0"]
