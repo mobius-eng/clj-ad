@@ -1,4 +1,4 @@
-(defproject clj-ad "0.2.0"
+(defproject clj-ad "0.2.1"
   :description "Clojure Automatic Differentiation"
   :url "http://github.com/mobius-eng/clj-ad"
   :license {:name "Eclipse Public License"

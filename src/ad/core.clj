@@ -1,27 +1,29 @@
 (ns ad.core
   (:refer-clojure :exclude [* + - / == < > <= >= zero? number? pos? neg?])
   (:require [clojure.core.match :refer [match]]
-            [clojure.core.matrix :as matrix]
-            ;; [clojure.core.matrix.operators :as operators :refer [/]]
-            ))
+            [clojure.core.matrix :as matrix]))
 
 ;; * Necessary book-keeping
 ;; This to make sure right things get differentiatied
-(def e (atom 0))
+(def e
+  "Book-keeping value to find what is differentiated now"
+  (atom 0))
 ;; Compare =e=
 (def <_e clojure.core/<)
 
 ;; * Protocol to extract common information
+;; ** Definiton
 (defprotocol PDiffNumber
-  (epsilon [p])
-  (primal [p]))
+  "Basic operations on numbers that can be differentiated"
+  (epsilon [p] "Book-keeping value")
+  (primal [p] "Primal (main) part of the number"))
+;; ** Tirivial implementation for actual numbers
+;; (extend-type Number
+;;   PDiffNumber
+;;   (epsilon [_] 0)
+;;   (primal [x] x))
 
-(extend-type Number
-  PDiffNumber
-  (epsilon [_] 0)
-  (primal [x] x))
-
-;; * Dual-numbers
+;; * Forward differentiation method: dual numbers
 (defrecord DualNumber [epsilon primal perturbation]
   PDiffNumber
   (epsilon [_] epsilon)
@@ -32,13 +34,15 @@
 (defn dual-number [epsilon primal perturbation]
   (->DualNumber epsilon primal perturbation))
 
-;; * Tapes
+;; * Reverse differentiation: tapes
+;; ** Interface (might change in the future)
 (definterface ITape
   (getFanout [])
   (setFanout [val])
   (getSensitivity [])
   (setSensitivity [val]))
-
+;; ** Tape definition
+;; Use =deftype= as need mutable fields
 (deftype Tape [epsilon primal factors tapes
                ^:volatile-mutable fanout
                ^:volatile-mutable sensitivity]
@@ -47,12 +51,13 @@
   (setFanout [_ val] (set! fanout val))
   (getSensitivity [_] sensitivity)
   (setSensitivity [_ val] (set! sensitivity val))
-
+  ;; tapes are also differentiable numbers
   PDiffNumber
   (epsilon [_] epsilon)
   (primal [_] primal))
 
 (defn tape? [t] (instance? Tape t))
+
 
 (defn ad-type [x]
   (cond (dual-number? x) :dual
@@ -154,14 +159,14 @@
 (defn lift-real-n+1->real [f df-dx df-dx1 df-dx2]
   (fn [& xs]
     (cond (nil? xs) (f)
-          (nil? (rest xs)) ((lift-real->real f df-dx) (first xs))
+          (empty? (rest xs)) ((lift-real->real f df-dx) (first xs))
           :else (reduce (fn [x1 x2] (lift-real*real->real x1 x2 f df-dx1 df-dx2)) xs))))
 
 (defn primal* [x]
-  (match (ad-type x)
-         :dual (primal* (primal x))
-         :tape (primal* (primal x))
-         _ x))
+  (loop [y x]
+    (if (instance? Number y)
+      y
+      (recur (primal x)))))
 
 (defn lift-real-n->boolean [f]
   (fn [& xs] (apply f (map primal* xs))))
